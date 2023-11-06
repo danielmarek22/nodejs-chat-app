@@ -176,7 +176,7 @@ function loginTest(request, response) {
 
 function logout(request, response) {
     console.log ( " logout " )
-    request.session.destroy () ;
+    request.session.destroy();
     response.send({ loggedin: false });
 }
 
@@ -192,7 +192,12 @@ function getUsers(request, response) {
     //TODO: wysłanie listy użytkowników klientowi
     User.findAll({attributes: ['user_id', 'user_name']})
     .then(users => {
-      response.send({ data: users });
+        const userResults = users.map(user => ({
+            user_id: user.user_id,
+            user_name: user.user_name,
+            isOnline: onlineUsers[user.user_id] !== undefined && onlineUsers[user.user_id] !== null,
+          }));
+        response.send({ data: userResults });
     })
     .catch(error => {
       console.error('Error fetching users:', error);
