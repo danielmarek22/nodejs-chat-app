@@ -10,6 +10,10 @@ const cors = require('cors');
 // dołączenie modułu obsługi sesji
 var session = require('express-session')
 
+// add the requirement for websockets
+const WebSocket = require('ws');
+
+
 //Inicjalizacja aplikacji
 var app             = express();
 //process.env.PORT - pobranie portu z danych środowiska np. jeżeli aplikacja zostanie uruchomiona na zewnętrznej platformie np. heroku
@@ -37,6 +41,14 @@ app.use(cors());
 // dołączenie obslugi sesji do aplikacji 
 app.use(sessionParser);
 
+// add folder with client app files
+app.use(express.static(__dirname + '/client/'));
+
+
+
+const wss = new WebSocket.Server ({ 
+    noServer: true,
+}) ;
 
 // Stworzenie modelu - tabeli User
 const User = sequelize.define('user', {
@@ -55,6 +67,47 @@ sequelize.sync({ force: true }).then(() => {
   console.log(`Database & tables created!`)
 })
 
+server.on('upgrade', function (request, socket, head) {
+    // check if seesion exists for a given connection
+    sessionParser(request, {}, () => {
+        if (!request.session.user_id) {
+            socket.destroy();
+            return;
+        }
+    // enables for server to overtake the wbs connection 
+        wss.handleUpgrade(request, socket, head, function (ws) {
+            wss.emit('connection', ws, request);
+        });
+    });
+});
+
+let onlineUsers = {};
+// Funkcja wywoływana kiedy przyjdzie nowe połączenie ws
+// Dla każdego nowego klienta tworzony jest osobne połączenie WS
+wss.on('connection', function (ws, request) {
+
+    wss.clients.forEach(function each(client) {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ status: 2 }));
+        }
+    });
+    onlineUsers[request.session.user_id] = ws;
+
+    ws.on('message', function (message) {
+        console.log(String(message))
+        // parsowanie wiadomosci z JSONa na obiekt
+        try {
+            var data = JSON.parse(message);
+        } catch (error) {
+            return;
+        }
+    });
+
+    ws.on('close', () => {
+        delete onlineUsers[request.session.user_id];
+    })
+
+});
 
 function testGet(request, response){
     response.send("testGet working");
@@ -88,10 +141,30 @@ function register(request, response) {
 // logowanie uzytkownika
 function login(request, response) {
     // TODO: logowanie
-    request.session.loggedin = true;
-    request.session.user_id = request.body.user_id;
-    console.log(request.session.user_id)
-    response.send({ loggedin: request.session.loggedin });
+    console.log('logging in')
+    
+    return User.findOne({
+        where: {
+          user_name: request.body.user_name,
+          user_password: request.body.user_password,
+        }, attributes: ['user_id', 'user_name']}
+      )
+        .then(user => {
+          if (user) {
+            // User with matching credentials exists
+            request.session.loggedin = true;
+            request.session.user_id = user.user_id;
+            response.send({ loggedin: request.session.loggedin });
+          } else {
+            // User not found or password is incorrect
+            request.session.loggedin = false;
+            response.send({ loggedin: request.session.loggedin });
+          }
+        })
+        .catch(error => {
+          console.error('Error checking login:', error);
+          throw error;
+        });    
 }
 
 // sprawdzenie logowania jeżeli funkcja checkSessions nie zwróci błędu
@@ -117,7 +190,7 @@ function checkSessions(request, response, next) {
 
 function getUsers(request, response) {
     //TODO: wysłanie listy użytkowników klientowi
-    User.findAll()
+    User.findAll({attributes: ['user_id', 'user_name']})
     .then(users => {
       response.send({ data: users });
     })
