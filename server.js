@@ -61,6 +61,18 @@ const User = sequelize.define('user', {
     user_password: Sequelize.STRING
 })
 
+// Adding new table holding messages
+const Message = sequelize.define('message', {
+    message_id: {
+        type: Sequelize.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    message_from_user_id: Sequelize.INTEGER,
+    message_to_user_id: Sequelize.INTEGER,
+    message_text: Sequelize.STRING
+})
+
 
 // synchroniznacja bazy danych - np. tworzenie tabel
 sequelize.sync({ force: true }).then(() => {
