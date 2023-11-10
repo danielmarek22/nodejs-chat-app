@@ -217,6 +217,26 @@ function getUsers(request, response) {
     });
 }
 
+function getMessages(request, response) {
+    // find all messages sent to
+    const { Op } = require("sequelize");
+
+    Message.findAll({
+        where: {
+            [Op.or]: [
+              {
+                message_from_user_id: request.session.user_id,
+                message_to_user_id: request.params.id,
+              },
+              {
+                message_from_user_id: request.params.id,
+                message_to_user_id: request.session.user_id,
+              },
+            ],
+          }
+        }).then(messages => response.send({data: messages}))
+}
+
 app.get('/api/test-get', testGet);
 
 app.post('/api/register/', [register]);
@@ -228,3 +248,5 @@ app.get('/api/login-test/', [checkSessions, loginTest]);
 app.get('/api/logout/', [checkSessions, logout]);
 
 app.get('/api/users/', [checkSessions, getUsers]);
+
+app.get('/api/messages/:id', [checkSessions, getMessages]);
