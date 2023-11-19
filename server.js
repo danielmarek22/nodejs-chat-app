@@ -166,10 +166,12 @@ function login(request, response) {
             // User with matching credentials exists
             request.session.loggedin = true;
             request.session.user_id = user.user_id;
+            console.log('logging ok')
             response.send({ loggedin: request.session.loggedin });
           } else {
             // User not found or password is incorrect
             request.session.loggedin = false;
+            console.log('logging failed')
             response.send({ loggedin: request.session.loggedin });
           }
         })

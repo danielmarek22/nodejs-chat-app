@@ -14,7 +14,41 @@ const LoginPage = () => {
     <div>
       <h1>Logowanie</h1>
       <form>
-        {/* TODO: Uzupełnij widok logowania bazując na widoku rejestracji. */}
+      <div>
+          <label>Nazwa Użytkownika</label>
+          <input
+            type="text"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+          />
+        </div>
+        <div>
+          <label>Hasło</label>
+          <input
+            type="password"
+            value={userPassword}
+            onChange={(e) => setUserPassword(e.target.value)}
+          />
+        </div>
+        <div>
+        <button
+            type="submit"
+            onClick={(e) => {
+              // Zapobiega submit'owi formy
+              e.preventDefault();
+              // Zaloguj się
+              apiClient.login(userName, userPassword).then((data) => {
+                alert(
+                  data.loggedin
+                    ? "Logowanie pomyślne"
+                    : "Logowanie nie udało się"
+                );
+              });
+            }}
+          >
+            Zaloguj się
+          </button>
+        </div>
       </form>
     </div>
   );

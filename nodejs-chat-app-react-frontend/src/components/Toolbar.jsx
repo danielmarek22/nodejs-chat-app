@@ -32,6 +32,13 @@ const Toolbar = () => {
           style={{ float: "right", marginRight: "1rem", cursor: "pointer" }}
           onClick={(e) => {
             // TODO: Uzupełnić o funkcję wylogowania użytkownika.
+            apiClient.logout().then((data) => {
+              alert(
+                data.loggedin
+                  ? "Wylogowanie nie powiodło się"
+                  : "Wylogowanie pomyślne"
+              );
+            });
           }}
         >
           Wyloguj

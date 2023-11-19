@@ -23,6 +23,14 @@ const register = async (user_name, user_password) => {
  */
 const login = async (user_name, user_password) => {
   // TODO: Uzupełnić w opraciu o inne funkcje, zwłaszcza register(user_name, user_password).
+  const response = await fetch("/api/login/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ user_name, user_password }),
+  });
+  return response.json(); // Promise
 };
 
 /**
