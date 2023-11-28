@@ -38,6 +38,7 @@ const Toolbar = () => {
                   ? "Wylogowanie nie powiodło się"
                   : "Wylogowanie pomyślne"
               );
+              setIsLoggedIn(data.loggedin)
             });
           }}
         >

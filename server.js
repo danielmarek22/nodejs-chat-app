@@ -75,7 +75,7 @@ const Message = sequelize.define('message', {
 
 
 // synchroniznacja bazy danych - np. tworzenie tabel
-sequelize.sync({ force: true }).then(() => {
+sequelize.sync({ force: false }).then(() => {
   console.log(`Database & tables created!`)
 })
 
@@ -83,6 +83,7 @@ server.on('upgrade', function (request, socket, head) {
     // check if seesion exists for a given connection
     sessionParser(request, {}, () => {
         if (!request.session.user_id) {
+            console.log(request.session)
             socket.destroy();
             return;
         }
@@ -166,12 +167,10 @@ function login(request, response) {
             // User with matching credentials exists
             request.session.loggedin = true;
             request.session.user_id = user.user_id;
-            console.log('logging ok')
             response.send({ loggedin: request.session.loggedin });
           } else {
             // User not found or password is incorrect
             request.session.loggedin = false;
-            console.log('logging failed')
             response.send({ loggedin: request.session.loggedin });
           }
         })
@@ -204,19 +203,23 @@ function checkSessions(request, response, next) {
 
 function getUsers(request, response) {
     //TODO: wysłanie listy użytkowników klientowi
-    User.findAll({attributes: ['user_id', 'user_name']})
-    .then(users => {
-        const userResults = users.map(user => ({
-            user_id: user.user_id,
-            user_name: user.user_name,
-            isOnline: onlineUsers[user.user_id] !== undefined && onlineUsers[user.user_id] !== null,
-          }));
-        response.send({ data: userResults });
+    User.findAll({
+        attributes: ['user_id', 'user_name']
+      }).then(users => {
+        users = users.map(user => {
+              return user.toJSON();
+        });
+            
+        for (user of users) {
+            if (user.user_id in onlineUsers) {
+                user.online = true;
+            }
+            else {
+                user.online = false;
+            }
+        }
+        response.json({ data: users})
     })
-    .catch(error => {
-      console.error('Error fetching users:', error);
-      response.status(500).send({ error: 'Internal Server Error' });
-    });
 }
 
 function sendMessages(request, response) {
@@ -238,14 +241,12 @@ function sendMessages(request, response) {
                         {
                             if (user.user_id in onlineUsers) {
                                 // Wysyłanie wiadomości do odiorcy
-                                ws = onlineUsers[user.user_id]
-                                ws.send(message_text)
+                                onlineUsers[user.user_id].send(JSON.stringify({ status: 1, data: mes }));
                             }
                             if (mes.message_from_user_id !== mes.message_to_user_id) {
                                 if (mes.message_from_user_id in onlineUsers) {
                                      // Wysyłanie wiadomości do nadawcy jeżeli odbiorca nie jest nadawca
-                                     ws = onlineUsers[request.session.user_id]
-                                     ws.send("This user is not online")
+                                     onlineUsers[mes.message_from_user_id].send(JSON.stringify({ status: 1, data: mes }));
                                 }
                             }
 
@@ -295,4 +296,4 @@ app.get('/api/users/', [checkSessions, getUsers]);
 
 app.post('/api/messages/', [checkSessions, sendMessages]);
 
-app.get('/api/messages/::id', [checkSessions, getMessages]);
+app.get('/api/messages/:id', [checkSessions, getMessages]);

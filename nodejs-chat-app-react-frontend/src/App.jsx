@@ -8,6 +8,7 @@ import Toolbar from "./components/Toolbar";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import UserListPage from "./pages/UserListPage";
+import Chat from "./pages/Chat";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Switch>
           <Route path="/register" component={RegisterPage} />
           <Route path="/login" component={LoginPage} />
+          <Route path="/chat/:id" component={Chat} />
           {/* TODO: Route dla Chat.jsx */}
           {/* Default route */}
           <Route exact path="/">

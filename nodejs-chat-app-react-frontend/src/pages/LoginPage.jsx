@@ -40,9 +40,10 @@ const LoginPage = () => {
               apiClient.login(userName, userPassword).then((data) => {
                 alert(
                   data.loggedin
-                    ? "Logowanie pomyślne"
+                    ? "Logowanie pomyślne" 
                     : "Logowanie nie udało się"
                 );
+                setIsLoggedIn(data.loggedin)
               });
             }}
           >

@@ -10,8 +10,33 @@ const UserListPage = () => {
 
   // TODO: Jeśli użytkownik jest zalogowany ustaw listę użytkowników
 
+  useEffect(() => {
+    apiClient.getUsers().then((data) => {
+      if (data.loggedin !== false) {
+        console.log(data.data);
+        setUsers(data.data);
+      }
+    });
+  }, []);
+
   // TODO:WEBSOCKET Jeśli zostanie utworzony nowy użytkownik zaktualizuj
   // listę użytkowników przez WebSocket.
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:8080/stream/');
+    ws.onopen = () => console.log('WebSocket otwarty');
+    ws.onclose = () => console.log('WebSocket zamknięty');
+    ws.onmessage = (event) => {
+      // Otrzymanie nowego użytkownika z WebSocket
+      const newUsers = JSON.parse(event.data);
+
+      // Aktualizacja stanu komponentu o nowego użytkownika
+      //setUsers(newUsers);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   if (!isLoggedIn) {
     return <p>Zaloguj się aby wyświetlić użytkowników czatu</p>;
@@ -19,9 +44,9 @@ const UserListPage = () => {
   return (
     <div>
       <h1>Lista użytkowników</h1>
-      {users.map((user, idx) => (
-        <p>Placeholder</p>
+      {users && users.map((user, idx) => (
         // TODO: Wyświetl element z listy użytkowników
+        <UserListItem key={user.user_id} user={user} />
       ))}
     </div>
   );
